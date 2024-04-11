@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+
+  db:
+    build: ./db
+    container_name: mysqldbcont
+    env_file:
+      - .env.db
+    ports:
+      - "$PORT:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: $PASSWORD
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - my_network
+
+  djangoapp:
+    build: .  
+    command: /bin/bash -c "./script.sh"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my_network
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env.db
+    environment:
+      DATABASE_NAME: "world"
+      DATABASE_USER: $USER
+      DATABASE_PASSWORD: $PASSWORD
+      DATABASE_HOST: $HOST
+      DATABASE_PORT: $PORT
+
+networks:
+  my_network:
+
+volumes:
+  db_data:
